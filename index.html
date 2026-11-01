@@ -1,0 +1,399 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Repaso de lectura de código</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: hoja de ficha imprimible, una columna, bloques Scratch dibujados en CSS */
+:root{
+  --bg:#eef0f4; --sheet:#ffffff; --fg:#1f2430; --muted:#5b6475; --line:#d5d9e2;
+  --accent:#4c97ff; --ok:#1f8a4c; --ok-bg:#e4f5ea; --no:#b3382c; --no-bg:#fbe9e6;
+  --note-bg:#fff6d6; --note-line:#e0c65a;
+  --ev:#ffbf00; --ct:#ffab19; --vr:#ff8c1a; --op:#59c059; --lk:#9966ff; --mt:#4c97ff;
+  --sn:#5cb1d6; --mb:#ff6680; --opd:#389438; --fld:#ffffff; --fldfg:#575e75;
+  --font:"Nunito Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --blk:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"Roboto Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#14171e; --sheet:#1d212b; --fg:#e8ebf2; --muted:#9aa3b5; --line:#343a48;
+  --ok:#6fd49a; --ok-bg:#16301f; --no:#ff9c8f; --no-bg:#3a1d1a;
+  --note-bg:#33300f; --note-line:#6b5f1c; color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#14171e; --sheet:#1d212b; --fg:#e8ebf2; --muted:#9aa3b5; --line:#343a48;
+  --ok:#6fd49a; --ok-bg:#16301f; --no:#ff9c8f; --no-bg:#3a1d1a;
+  --note-bg:#33300f; --note-line:#6b5f1c; color-scheme:dark;}
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;800&family=Nunito:wght@700;800&family=Roboto+Mono:wght@500&display=swap">
+<style>
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:16px;line-height:1.5;
+  padding-block:24px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.sheet{max-width:760px;margin:0 auto;background:var(--sheet);border:1px solid var(--line);border-radius:10px;
+  padding:clamp(18px,4vw,36px);display:flex;flex-direction:column;gap:28px}
+header{display:flex;flex-direction:column;gap:6px;border-bottom:2px solid var(--fg);padding-bottom:14px}
+.tag{font-size:12px;letter-spacing:.09em;text-transform:uppercase;font-weight:800;color:var(--muted)}
+h1{margin:0;font-size:clamp(26px,5vw,34px);line-height:1.15;text-wrap:balance}
+.goal{margin:0;color:var(--muted)}
+.part{display:flex;flex-direction:column;gap:14px}
+.part h2{margin:0;font-size:20px;display:flex;align-items:center;gap:10px}
+.badge{display:inline-grid;place-items:center;min-width:30px;height:30px;padding:0 8px;border-radius:6px;
+  background:var(--fg);color:var(--sheet);font-weight:800;font-size:16px}
+.sub{margin:0;color:var(--muted);font-size:15px}
+ol.steps{margin:0;padding-left:1.4em;display:flex;flex-direction:column;gap:6px}
+ol.steps li::marker{font-weight:800}
+.menu{font-weight:800}
+.work{display:flex;flex-direction:column;gap:18px;min-width:0}
+.work table{max-width:520px}
+.stage{overflow-x:auto;padding:4px 2px 8px}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{border:1px solid var(--line);padding:7px 10px;text-align:left}
+th{background:var(--bg);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+td.ok{background:var(--ok-bg);color:var(--ok);font-weight:800}
+td.no{background:var(--no-bg);color:var(--no);font-weight:800}
+td.mono{font-family:var(--mono)}
+.hint{background:var(--note-bg);border:1px solid var(--note-line);border-radius:8px;padding:10px 14px;font-size:15px}
+.hint b{font-weight:800}
+.map{margin:0}
+.map caption{caption-side:top;text-align:left;font-weight:800;padding-bottom:6px;font-size:14px}
+hr.cut{border:0;border-top:2px dashed var(--line);margin:0}
+
+/* ---------- Bloques Scratch ---------- */
+.stack{display:flex;flex-direction:column;width:max-content;max-width:none;font-family:var(--blk);font-weight:800;font-size:14px;color:#fff}
+.row{display:flex;align-items:center;gap:6px;padding:7px 10px;min-height:34px;white-space:nowrap}
+.b{background:var(--c);border-radius:4px}
+.b+.b,.b+.cb,.cb+.b{margin-top:0}
+.hat{border-radius:20px 20px 4px 4px;padding-top:10px}
+.ev{--c:var(--ev);color:#3a2e00}
+.vr{--c:var(--vr)} .lk{--c:var(--lk)} .ct{--c:var(--ct)} .mt{--c:var(--mt)} .opb{--c:var(--op)}
+.cb{background:var(--c);border-radius:4px;display:flex;flex-direction:column}
+.cb>.inner{margin-left:16px;background:var(--sheet)}
+.cb>.inner>.b{border-radius:0}
+.cb>.cap{height:20px}
+.cb>.mid{padding:6px 10px;min-height:30px;display:flex;align-items:center}
+.f{background:var(--fld);color:var(--fldfg);border-radius:999px;padding:1px 9px;min-width:26px;text-align:center;font-weight:700;line-height:1.5}
+.f.t{border-radius:999px}
+.rep{background:var(--vr);color:#fff;border-radius:999px;padding:1px 10px;line-height:1.5}
+.bool{--h:10px;display:inline-flex;align-items:center;gap:6px;padding:3px 16px;background:var(--op);color:#fff;
+  clip-path:polygon(var(--h) 0,calc(100% - var(--h)) 0,100% 50%,calc(100% - var(--h)) 100%,var(--h) 100%,0 50%)}
+.bool.in{background:var(--opd)}
+.dd{background:rgba(0,0,0,.18);border-radius:4px;padding:1px 8px}
+.flag{width:18px;height:18px;display:block}
+.stage{padding-right:240px;display:flex;flex-direction:column;gap:20px;align-items:flex-start}
+.lead{margin:0;font-size:20px;line-height:1.45;color:var(--fg)}
+.stack .row,.stack .mid{position:relative}
+.tg{position:absolute;left:calc(100% + 12px);top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:6px;
+  font-family:var(--font);font-weight:700;font-size:14px;color:var(--muted);white-space:nowrap}
+.tg b{font-weight:800}
+</style>
+
+<style>
+.opr{background:var(--op);color:#fff;border-radius:999px;padding:1px 8px;display:inline-flex;align-items:center;gap:6px}
+.opr .rep{background:var(--vr)}
+.page{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+.intro{max-width:760px;margin:0 auto 24px}
+.intro h1{margin:0 0 4px;font-size:clamp(24px,5vw,32px);text-wrap:balance}
+.intro p{margin:0;color:var(--muted)}
+.pill{display:inline-block;margin:0 6px 0 0;font-weight:800}
+.bool.in2{background:#2a7a2a}
+.mb{--c:var(--mb)}
+.bool.sn2{background:var(--sn)}
+.fhead{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.fn{background:#2b6cd4;color:#fff;font-weight:800;font-size:20px;padding:4px 14px;border-radius:8px;line-height:1.3}
+.fc{font-size:13px;letter-spacing:.08em;text-transform:uppercase;font-weight:800;color:var(--muted)}
+.idx{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.idx a{display:inline-grid;place-items:center;min-width:34px;height:34px;padding:0 8px;border-radius:8px;background:#2b6cd4;color:#fff;font-weight:800;text-decoration:none}
+.idx a:focus-visible{outline:3px solid var(--fg);outline-offset:2px}
+.flow{max-width:100%;overflow-x:auto}
+.flow svg{display:block;width:460px;max-width:none;height:auto}
+.flow .shape{fill:var(--sheet);stroke:var(--fg);stroke-width:2}
+.flow text{fill:var(--fg);font-family:var(--font);font-size:14px;font-weight:700;text-anchor:middle}
+.flow .lbl{font-size:12px;fill:var(--muted)}
+.flow .ln{stroke:var(--fg);stroke-width:2;fill:none}
+
+.tg{display:block;line-height:1.3;white-space:nowrap}
+.wide .tg{white-space:normal;max-width:135px}
+.cb>.inner>.cb{border-radius:0}
+.sn{--c:var(--sn)}
+.rep.ans{background:var(--sn)}
+.par{background:#ff4d6a;color:#fff;border-radius:999px;padding:1px 10px;line-height:1.5;filter:brightness(.92)}
+.blockhead{max-width:760px;width:100%;margin:12px auto 0}
+.blockhead h2{margin:0;font-size:clamp(20px,4vw,26px)}
+.blockhead p{margin:2px 0 0;color:var(--muted)}
+.entrega{margin:0;font-size:15px;color:var(--muted)}
+</style>
+<style>
+.page{max-width:820px;display:flex;flex-direction:column;gap:30px}
+.top{display:flex;flex-direction:column;gap:12px}
+.top h1{margin:0;font-size:clamp(26px,5vw,34px)}
+.top p{margin:0;color:var(--muted)}
+.prog{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding:10px 0;display:flex;flex-direction:column;gap:6px;border-bottom:1px solid var(--line)}
+.bar{height:10px;border-radius:99px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--ok);transition:width .3s}
+.ptxt{font-weight:800;font-size:15px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.phase{display:flex;flex-direction:column;gap:16px}
+.phead{display:flex;gap:14px;align-items:flex-start}
+.pn{background:#2b6cd4;color:#fff;font-weight:800;font-size:18px;padding:4px 14px;border-radius:8px;white-space:nowrap}
+.phead h2{margin:0;font-size:22px}
+.phead p{margin:2px 0 0;color:var(--muted);font-size:15px}
+.ex{background:var(--sheet);border:1px solid var(--line);border-radius:10px;padding:16px 18px;display:flex;flex-direction:column;gap:14px;scroll-margin-top:90px}
+.ex.ok{border-color:var(--ok)}
+.exh{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.exh h3{margin:0;font-size:17px}
+.state{font-weight:800;font-size:14px;border-radius:6px;padding:2px 10px}
+.state.ok{background:var(--ok-bg);color:var(--ok)}
+.state.no{background:var(--no-bg);color:var(--no)}
+.ex .stage{padding-right:240px;overflow-x:auto}
+.qs{display:flex;flex-direction:column;gap:8px}
+.qrow{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;max-width:620px}
+.qt{flex:1 1 260px;min-width:0}
+.qin{display:flex;align-items:center;gap:8px}
+.qin input{width:170px;max-width:100%;font:inherit;font-size:16px;padding:7px 10px;border:1.5px solid var(--line);border-radius:7px;background:var(--bg);color:var(--fg)}
+.qin input:focus-visible{outline:3px solid #2b6cd4;outline-offset:1px}
+.qin input.ok{border-color:var(--ok);background:var(--ok-bg)}
+.qin input.no{border-color:var(--no);background:var(--no-bg)}
+.mark{width:22px;font-weight:800;text-align:center}
+.mark.ok{color:var(--ok)}.mark.no{color:var(--no)}
+.acts{display:flex;gap:8px;flex-wrap:wrap}
+.btn{font:inherit;font-weight:800;font-size:15px;padding:8px 14px;border-radius:8px;border:1.5px solid var(--fg);background:var(--sheet);color:var(--fg);cursor:pointer}
+.btn.main{background:#2b6cd4;border-color:#2b6cd4;color:#fff}
+.btn:focus-visible{outline:3px solid #2b6cd4;outline-offset:2px}
+.btn[hidden]{display:none}
+.note{margin:0;background:var(--note-bg);border:1px solid var(--note-line);border-radius:8px;padding:10px 14px;font-size:15px}
+.fin{background:var(--sheet);border:1px solid var(--line);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:10px}
+.fin h2{margin:0;font-size:20px}
+.fin p{margin:0}
+.nameRow{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.nameRow input{font:inherit;padding:7px 10px;border:1.5px solid var(--line);border-radius:7px;background:var(--bg);color:var(--fg);flex:1 1 220px;min-width:0}
+.fin textarea{font:inherit;font-family:var(--mono);font-size:14px;padding:10px;border:1.5px solid var(--line);border-radius:7px;background:var(--bg);color:var(--fg);width:100%;min-height:210px;resize:vertical;overflow:hidden}
+.reset{align-self:flex-start;border-color:var(--line);color:var(--muted)}
+.idx a{background:#2b6cd4}
+@media (max-width:560px){#pphase{display:none}.ex .stage{padding-right:16px}.phead{flex-direction:column;gap:8px}}
+</style>
+
+<main class="page">
+  <div class="top">
+    <h1>Repaso: ¿qué hace este código?</h1>
+    <p>Lee cada programa, escribe lo que dirá o valdrá y pulsa <b>Comprobar</b>. Si está bien, verás <b>¡OK!</b>. Si no, usa la <b>Pista</b>; tras dos intentos podrás ver un <b>paso a paso</b> que te guía sin darte la solución; cuando aciertes, verás cómo se resuelve. Los textos dan igual en mayúsculas y minúsculas.</p>
+    <nav class="idx" aria-label="Ir a una fase"><a href="#fase1">1</a><a href="#fase2">2</a><a href="#fase3">3</a><a href="#fase4">4</a><a href="#fase5">5</a></nav>
+    <div class="prog"><div class="ptxt"><span id="ptxt"></span><span id="pphase" style="font-weight:600;color:var(--muted)"></span></div><div class="bar"><i id="pbar"></i></div></div>
+  </div>
+  <section class="phase" id="fase1"><div class="phead"><span class="pn">Fase 1</span><div><h2>Variables</h2><p>Sigue el valor de la variable instrucción por instrucción. Las variables recuerdan el último valor que se les dio.</p></div></div><article class="ex" id="ex-1.1" data-id="1.1">
+  <div class="exh"><h3>Ejercicio 1.1</h3><span class="state" id="st-1.1" role="status"></span></div>
+  <div class="stage"><div class="stack "><div class="b hat ev row">al hacer clic en <svg class="flag" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 2v16" stroke="#2c8a2c" stroke-width="2.4" stroke-linecap="round"/><path d="M5 3c4-2 6 2 10 0v8c-4 2-6-2-10 0z" fill="#4cbf4c" stroke="#2c8a2c" stroke-width="1.2"/></svg><span class="tg" aria-hidden="true"><b style="color:var(--ev)">Eventos</b></span></div><div class="b vr row">dar a <span class="dd">vidas ▾</span> el valor <span class="f">3</span><span class="tg" aria-hidden="true"><b style="color:var(--vr)">Variables</b></span></div><div class="b vr row">sumar a <span class="dd">vidas ▾</span> <span class="f">-1</span><span class="tg" aria-hidden="true"><b style="color:var(--vr)">Variables</b></span></div><div class="b vr row">sumar a <span class="dd">vidas ▾</span> <span class="f">-1</span><span class="tg" aria-hidden="true"><b style="color:var(--vr)">Variables</b></span></div><div class="b lk row">decir <span class="rep">vidas</span> durante <span class="f">2</span> segundos<span class="tg" aria-hidden="true"><b style="color:var(--lk)">Apariencia</b> + <b style="color:var(--vr)">Variables</b></span></div></div></div>
+  <div class="qs"><label class="qrow"><span class="qt">¿Qué dice el sprite?</span><span class="qin"><input type="text" id="i-1.1-0" data-q="0" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Respuesta"><span class="mark" aria-hidden="true"></span></span></label></div>
+  <div class="acts"><button type="button" class="btn main" data-act="check">Comprobar</button><button type="button" class="btn" data-act="hint">Pista</button><button type="button" class="btn" data-act="trace" hidden>Ver paso a paso</button></div>
+  <p class="note" id="nt-1.1" hidden></p>
+</article><article class="ex" id="ex-1.2" data-id="1.2">
+  <div class="exh"><h3>Ejercicio 1.2</h3><span class="state" id="st-1.2" role="status"></span></div>
+  <div class="stage"><div class="stack "><div class="b hat ev row">al hacer clic en <svg class="flag" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 2v16" stroke="#2c8a2c" stroke-width="2.4" stroke-linecap="round"/><path d="M5 3c4-2 6 2 10 0v8c-4 2-6-2-10 0z" fill="#4cbf4c" stroke="#2c8a2c" stroke-width="1.2"/></svg><span class="tg" aria-hidden="true"><b style="color:var(--ev)">Eventos</b></span></div><div class="b vr row">dar a <span class="dd">a ▾</span> el valor <span class="f">4</span><span class="tg" aria-hidden="true"><b style="color:var(--vr)">Variables</b></span></div><div class="b vr row">dar a <span class="dd">b ▾</span> el valor <span class="rep">a</span><span class="tg" aria-hidden="true"><b style="color:var(--vr)">Variables</b></span></div><div class="b vr row">sumar a <span class="dd">a ▾</span> <span class="f">1</span><span class="tg" aria-hidden="true"><b style="color:var(--vr)">Variables</b></span></div><div class="b lk row">decir <span class="rep">b</span> durante <span class="f">2</span> segundos<span class="tg" aria-hidden="true"><b style="color:var(--lk)">Apariencia</b> + <b style="color:var(--vr)">Variables</b></span></div></div></div>
+  <div class="qs"><label class="qrow"><span class="qt">¿Qué dice el sprite?</span><span class="qin"><input type="text" id="i-1.2-0" data-q="0" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Respuesta"><span class="mark" aria-hidden="true"></span></span></label><label class="qrow"><span class="qt">¿Cuánto vale <b>a</b> al terminar?</span><span class="qin"><input type="text" id="i-1.2-1" data-q="1" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Respuesta"><span class="mark" aria-hidden="true"></span></span></label></div>
+  <div class="acts"><button type="button" class="btn main" data-act="check">Comprobar</button><button type="button" class="btn" data-act="hint">Pista</button><button type="button" class="btn" data-act="trace" hidden>Ver paso a paso</button></div>
+  <p class="note" id="nt-1.2" hidden></p>
+</article><article class="ex" id="ex-1.3" data-id="1.3">
+  <div class="exh"><h3>Ejercicio 1.3</h3><span class="state" id="st-1.3" role="status"></span></div>
+  <div class="stage"><div class="stack "><div class="b hat ev row">al hacer clic en <svg class="flag" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 2v16" stroke="#2c8a2c" stroke-width="2.4" stroke-linecap="round"/><path d="M5 3c4-2 6 2 10 0v8c-4 2-6-2-10 0z" fill="#4cbf4c" stroke="#2c8a2c" stroke-width="1.2"/></svg><span class="tg" aria-hidden="true"><b style="color:var(--ev)">Eventos</b></span></div><div class="b vr row">dar a <span class="dd">monedas ▾</span> el valor <span class="f">0</span><span class="tg" aria-hidden="true"><b style="color:var(--vr)">Variables</b></span></div><div class="b vr row">sumar a <span class="dd">monedas ▾</span> <span class="f">2</span><span class="tg" aria-hidden="true"><b style="color:var(--vr)">Variables</b></span></div><div class="b vr row">sumar a <span class="dd">monedas ▾</span> <span class="f">3</span><span class="tg" aria-hidden="true"><b style="color:var(--vr)">Variables</b></span></div><div class="b vr row">dar a <span class="dd">monedas ▾</span> el valor <span class="f">1</span><span class="tg" aria-hidden="true"><b style="color:var(--vr)">Variables</b></span></div><div class="b vr row">sumar a <span class="dd">monedas ▾</span> <span class="f">1</span><span class="tg" aria-hidden="true"><b style="color:var(--vr)">Variables</b></span></div><div class="b lk row">decir <span class="rep">monedas</span> durante <span class="f">2</span> segundos<span class="tg" aria-hidden="true"><b style="color:var(--lk)">Apariencia</b> + <b style="color:var(--vr)">Variables</b></span></div></div></div>
+  <div class="qs"><label class="qrow"><span class="qt">¿Qué dice el sprite?</span><span class="qin"><input type="text" id="i-1.3-0" data-q="0" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Respuesta"><span class="mark" aria-hidden="true"></span></span></label></div>
+  <div class="acts"><button type="button" class="btn main" data-act="check">Comprobar</button><button type="button" class="btn" data-act="hint">Pista</button><button type="button" class="btn" data-act="trace" hidden>Ver paso a paso</button></div>
+  <p class="note" id="nt-1.3" hidden></p>
+</article></section><section class="phase" id="fase2"><div class="phead"><span class="pn">Fase 2</span><div><h2>Condicionales</h2><p>Mira qué condición se cumple y qué rama se ejecuta. Fíjate en el signo: mayor que no incluye el propio número.</p></div></div><article class="ex" id="ex-2.1" data-id="2.1">
+  <div class="exh"><h3>Ejercicio 2.1</h3><span class="state" id="st-2.1" role="status"></span></div>
+  <div class="stage"><div class="stack "><div class="b hat ev row">al hacer clic en <svg class="flag" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 2v16" stroke="#2c8a2c" stroke-width="2.4" stroke-linecap="round"/><path d="M5 3c4-2 6 2 10 0v8c-4 2-6-2-10 0z" fill="#4cbf4c" stroke="#2c8a2c" stroke-width="1.2"/></svg><span class="tg" aria-hidden="true"><b style="color:var(--ev)">Eventos</b></span></div><div class="b sn row">preguntar <span class="f t">¿Qué nota has sacado?</span> y esperar<span class="tg" aria-hidden="true"><b style="color:var(--sn)">Sensores</b></span></div><div class="cb ct"><div class="row">si <span class="bool"><span class="rep ans">respuesta</span> &gt; <span class="f">6</span></span> entonces<span class="tg" aria-hidden="true"><b style="color:var(--ct)">Control</b> + <b style="color:var(--op)">Operadores</b><br>+ <b style="color:var(--sn)">Sensores</b></span></div><div class="inner"><div class="b lk row">decir <span class="f t">Aprobado</span> durante <span class="f">2</span> segundos<span class="tg" aria-hidden="true"><b style="color:var(--lk)">Apariencia</b></span></div></div><div class="mid">si no</div><div class="inner"><div class="b lk row">decir <span class="f t">Suspendido</span> durante <span class="f">2</span> segundos<span class="tg" aria-hidden="true"><b style="color:var(--lk)">Apariencia</b></span></div></div><div class="cap"></div></div></div></div>
+  <div class="qs tbl"><label class="qrow"><span class="qt">Si escribes 8, ¿qué dice?</span><span class="qin"><input type="text" id="i-2.1-0" data-q="0" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Respuesta"><span class="mark" aria-hidden="true"></span></span></label><label class="qrow"><span class="qt">Si escribes 6, ¿qué dice?</span><span class="qin"><input type="text" id="i-2.1-1" data-q="1" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Respuesta"><span class="mark" aria-hidden="true"></span></span></label><label class="qrow"><span class="qt">Si escribes 3, ¿qué dice?</span><span class="qin"><input type="text" id="i-2.1-2" data-q="2" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Respuesta"><span class="mark" aria-hidden="true"></span></span></label></div>
+  <div class="acts"><button type="button" class="btn main" data-act="check">Comprobar</button><button type="button" class="btn" data-act="hint">Pista</button><button type="button" class="btn" data-act="trace" hidden>Ver paso a paso</button></div>
+  <p class="note" id="nt-2.1" hidden></p>
+</article><article class="ex" id="ex-2.2" data-id="2.2">
+  <div class="exh"><h3>Ejercicio 2.2</h3><span class="state" id="st-2.2" role="status"></span></div>
+  <div class="stage"><div class="stack "><div class="b hat ev row">al hacer clic en <svg class="flag" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 2v16" stroke="#2c8a2c" stroke-width="2.4" stroke-linecap="round"/><path d="M5 3c4-2 6 2 10 0v8c-4 2-6-2-10 0z" fill="#4cbf4c" stroke="#2c8a2c" stroke-width="1.2"/></svg><span class="tg" aria-hidden="true"><b style="color:var(--ev)">Eventos</b></span></div><div class="b sn row">preguntar <span class="f t">¿Cuántos años tienes?</span> y esperar<span class="tg" aria-hidden="true"><b style="color:var(--sn)">Sensores</b></span></div><div class="cb ct"><div class="row">si <span class="bool"><span class="bool in"><span class="rep ans">respuesta</span> &gt; <span class="f">11</span></span> y <span class="bool in"><span class="rep ans">respuesta</span> &lt; <span class="f">18</span></span></span> entonces<span class="tg" aria-hidden="true"><b style="color:var(--ct)">Control</b> + <b style="color:var(--op)">Operadores</b><br>+ <b style="color:var(--sn)">Sensores</b></span></div><div class="inner"><div class="b lk row">decir <span class="f t">Entrada joven</span> durante <span class="f">2</span> segundos<span class="tg" aria-hidden="true"><b style="color:var(--lk)">Apariencia</b></span></div></div><div class="mid">si no</div><div class="inner"><div class="b lk row">decir <span class="f t">Entrada normal</span> durante <span class="f">2</span> segundos<span class="tg" aria-hidden="true"><b style="color:var(--lk)">Apariencia</b></span></div></div><div class="cap"></div></div></div></div>
+  <div class="qs tbl"><label class="qrow"><span class="qt">Si escribes 11, ¿qué dice?</span><span class="qin"><input type="text" id="i-2.2-0" data-q="0" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Respuesta"><span class="mark" aria-hidden="true"></span></span></label><label class="qrow"><span class="qt">Si escribes 12, ¿qué dice?</span><span class="qin"><input type="text" id="i-2.2-1" data-q="1" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Respuesta"><span class="mark" aria-hidden="true"></span></span></label><label class="qrow"><span class="qt">Si escribes 17, ¿qué dice?</span><span class="qin"><input type="text" id="i-2.2-2" data-q="2" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Respuesta"><span class="mark" aria-hidden="true"></span></span></label><label class="qrow"><span class="qt">Si escribes 18, ¿qué dice?</span><span class="qin"><input type="text" id="i-2.2-3" data-q="3" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Respuesta"><span class="mark" aria-hidden="true"></span></span></label></div>
+  <div class="acts"><button type="button" class="btn main" data-act="check">Comprobar</button><button type="button" class="btn" data-act="hint">Pista</button><button type="button" class="btn" data-act="trace" hidden>Ver paso a paso</button></div>
+  <p class="note" id="nt-2.2" hidden></p>
+</article><article class="ex" id="ex-2.3" data-id="2.3">
+  <div class="exh"><h3>Ejercicio 2.3</h3><span class="state" id="st-2.3" role="status"></span></div>
+  <div class="stage"><div class="stack "><div class="b hat ev row">al hacer clic en <svg class="flag" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 2v16" stroke="#2c8a2c" stroke-width="2.4" stroke-linecap="round"/><path d="M5 3c4-2 6 2 10 0v8c-4 2-6-2-10 0z" fill="#4cbf4c" stroke="#2c8a2c" stroke-width="1.2"/></svg><span class="tg" aria-hidden="true"><b style="color:var(--ev)">Eventos</b></span></div><div class="b sn row">preguntar <span class="f t">¿Cuántos puntos has sacado?</span> y esperar<span class="tg" aria-hidden="true"><b style="color:var(--sn)">Sensores</b></span></div><div class="b vr row">dar a <span class="dd">puntos ▾</span> el valor <span class="rep ans">respuesta</span><span class="tg" aria-hidden="true"><b style="color:var(--vr)">Variables</b> + <b style="color:var(--sn)">Sensores</b></span></div><div class="cb ct"><div class="row">si <span class="bool"><span class="rep">puntos</span> &gt; <span class="f">5</span></span> entonces<span class="tg" aria-hidden="true"><b style="color:var(--ct)">Control</b> + <b style="color:var(--op)">Operadores</b><br>+ <b style="color:var(--sn)">Sensores</b></span></div><div class="inner"><div class="b vr row">sumar a <span class="dd">puntos ▾</span> <span class="f">10</span><span class="tg" aria-hidden="true"><b style="color:var(--vr)">Variables</b></span></div></div><div class="cap"></div></div><div class="b lk row">decir <span class="rep">puntos</span> durante <span class="f">2</span> segundos<span class="tg" aria-hidden="true"><b style="color:var(--lk)">Apariencia</b> + <b style="color:var(--vr)">Variables</b></span></div></div></div>
+  <div class="qs tbl"><label class="qrow"><span class="qt">Si escribes 7, ¿qué dice?</span><span class="qin"><input type="text" id="i-2.3-0" data-q="0" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Respuesta"><span class="mark" aria-hidden="true"></span></span></label><label class="qrow"><span class="qt">Si escribes 5, ¿qué dice?</span><span class="qin"><input type="text" id="i-2.3-1" data-q="1" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Respuesta"><span class="mark" aria-hidden="true"></span></span></label><label class="qrow"><span class="qt">Si escribes 9, ¿qué dice?</span><span class="qin"><input type="text" id="i-2.3-2" data-q="2" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Respuesta"><span class="mark" aria-hidden="true"></span></span></label></div>
+  <div class="acts"><button type="button" class="btn main" data-act="check">Comprobar</button><button type="button" class="btn" data-act="hint">Pista</button><button type="button" class="btn" data-act="trace" hidden>Ver paso a paso</button></div>
+  <p class="note" id="nt-2.3" hidden></p>
+</article></section><section class="phase" id="fase3"><div class="phead"><span class="pn">Fase 3</span><div><h2>Repeticiones</h2><p>Cuenta cuántas veces se ejecuta lo que hay dentro del bucle y qué queda fuera.</p></div></div><article class="ex" id="ex-3.1" data-id="3.1">
+  <div class="exh"><h3>Ejercicio 3.1</h3><span class="state" id="st-3.1" role="status"></span></div>
+  <div class="stage"><div class="stack "><div class="b hat ev row">al hacer clic en <svg class="flag" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 2v16" stroke="#2c8a2c" stroke-width="2.4" stroke-linecap="round"/><path d="M5 3c4-2 6 2 10 0v8c-4 2-6-2-10 0z" fill="#4cbf4c" stroke="#2c8a2c" stroke-width="1.2"/></svg><span class="tg" aria-hidden="true"><b style="color:var(--ev)">Eventos</b></span></div><div class="b vr row">dar a <span class="dd">total ▾</span> el valor <span class="f">0</span><span class="tg" aria-hidden="true"><b style="color:var(--vr)">Variables</b></span></div><div class="cb ct"><div class="row">repetir <span class="f">4</span> veces<span class="tg" aria-hidden="true"><b style="color:var(--ct)">Control</b></span></div><div class="inner"><div class="b vr row">sumar a <span class="dd">total ▾</span> <span class="f">3</span><span class="tg" aria-hidden="true"><b style="color:var(--vr)">Variables</b></span></div></div><div class="cap"></div></div><div class="b lk row">decir <span class="rep">total</span> durante <span class="f">2</span> segundos<span class="tg" aria-hidden="true"><b style="color:var(--lk)">Apariencia</b> + <b style="color:var(--vr)">Variables</b></span></div></div></div>
+  <div class="qs"><label class="qrow"><span class="qt">¿Qué dice el sprite?</span><span class="qin"><input type="text" id="i-3.1-0" data-q="0" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Respuesta"><span class="mark" aria-hidden="true"></span></span></label><label class="qrow"><span class="qt">Si fuera «repetir 5 veces», ¿qué diría?</span><span class="qin"><input type="text" id="i-3.1-1" data-q="1" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Respuesta"><span class="mark" aria-hidden="true"></span></span></label></div>
+  <div class="acts"><button type="button" class="btn main" data-act="check">Comprobar</button><button type="button" class="btn" data-act="hint">Pista</button><button type="button" class="btn" data-act="trace" hidden>Ver paso a paso</button></div>
+  <p class="note" id="nt-3.1" hidden></p>
+</article><article class="ex" id="ex-3.2" data-id="3.2">
+  <div class="exh"><h3>Ejercicio 3.2</h3><span class="state" id="st-3.2" role="status"></span></div>
+  <div class="stage"><div class="stack "><div class="b hat ev row">al hacer clic en <svg class="flag" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 2v16" stroke="#2c8a2c" stroke-width="2.4" stroke-linecap="round"/><path d="M5 3c4-2 6 2 10 0v8c-4 2-6-2-10 0z" fill="#4cbf4c" stroke="#2c8a2c" stroke-width="1.2"/></svg><span class="tg" aria-hidden="true"><b style="color:var(--ev)">Eventos</b></span></div><div class="cb ct"><div class="row">repetir <span class="f">3</span> veces<span class="tg" aria-hidden="true"><b style="color:var(--ct)">Control</b></span></div><div class="inner"><div class="b lk row">decir <span class="f t">Hola</span> durante <span class="f">1</span> segundos<span class="tg" aria-hidden="true"><b style="color:var(--lk)">Apariencia</b></span></div></div><div class="cap"></div></div><div class="b lk row">decir <span class="f t">Adiós</span> durante <span class="f">1</span> segundos<span class="tg" aria-hidden="true"><b style="color:var(--lk)">Apariencia</b></span></div></div></div>
+  <div class="qs"><label class="qrow"><span class="qt">¿Cuántas veces dice «Hola»?</span><span class="qin"><input type="text" id="i-3.2-0" data-q="0" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Respuesta"><span class="mark" aria-hidden="true"></span></span></label><label class="qrow"><span class="qt">¿Cuántas veces dice «Adiós»?</span><span class="qin"><input type="text" id="i-3.2-1" data-q="1" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Respuesta"><span class="mark" aria-hidden="true"></span></span></label></div>
+  <div class="acts"><button type="button" class="btn main" data-act="check">Comprobar</button><button type="button" class="btn" data-act="hint">Pista</button><button type="button" class="btn" data-act="trace" hidden>Ver paso a paso</button></div>
+  <p class="note" id="nt-3.2" hidden></p>
+</article><article class="ex" id="ex-3.3" data-id="3.3">
+  <div class="exh"><h3>Ejercicio 3.3</h3><span class="state" id="st-3.3" role="status"></span></div>
+  <div class="stage"><div class="stack "><div class="b hat ev row">al hacer clic en <svg class="flag" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 2v16" stroke="#2c8a2c" stroke-width="2.4" stroke-linecap="round"/><path d="M5 3c4-2 6 2 10 0v8c-4 2-6-2-10 0z" fill="#4cbf4c" stroke="#2c8a2c" stroke-width="1.2"/></svg><span class="tg" aria-hidden="true"><b style="color:var(--ev)">Eventos</b></span></div><div class="b vr row">dar a <span class="dd">piezas ▾</span> el valor <span class="f">0</span><span class="tg" aria-hidden="true"><b style="color:var(--vr)">Variables</b></span></div><div class="b sn row">preguntar <span class="f t">¿Cuántas piezas quieres?</span> y esperar<span class="tg" aria-hidden="true"><b style="color:var(--sn)">Sensores</b></span></div><div class="cb ct"><div class="row">repetir <span class="rep ans">respuesta</span> veces<span class="tg" aria-hidden="true"><b style="color:var(--ct)">Control</b></span></div><div class="inner"><div class="b vr row">sumar a <span class="dd">piezas ▾</span> <span class="f">2</span><span class="tg" aria-hidden="true"><b style="color:var(--vr)">Variables</b></span></div></div><div class="cap"></div></div><div class="b lk row">decir <span class="rep">piezas</span> durante <span class="f">2</span> segundos<span class="tg" aria-hidden="true"><b style="color:var(--lk)">Apariencia</b> + <b style="color:var(--vr)">Variables</b></span></div></div></div>
+  <div class="qs tbl"><label class="qrow"><span class="qt">Si escribes 3, ¿qué dice?</span><span class="qin"><input type="text" id="i-3.3-0" data-q="0" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Respuesta"><span class="mark" aria-hidden="true"></span></span></label><label class="qrow"><span class="qt">Si escribes 0, ¿qué dice?</span><span class="qin"><input type="text" id="i-3.3-1" data-q="1" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Respuesta"><span class="mark" aria-hidden="true"></span></span></label><label class="qrow"><span class="qt">Si escribes 5, ¿qué dice?</span><span class="qin"><input type="text" id="i-3.3-2" data-q="2" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Respuesta"><span class="mark" aria-hidden="true"></span></span></label></div>
+  <div class="acts"><button type="button" class="btn main" data-act="check">Comprobar</button><button type="button" class="btn" data-act="hint">Pista</button><button type="button" class="btn" data-act="trace" hidden>Ver paso a paso</button></div>
+  <p class="note" id="nt-3.3" hidden></p>
+</article></section><section class="phase" id="fase4"><div class="phead"><span class="pn">Fase 4</span><div><h2>Bloques propios</h2><p>Un bloque propio hace lo que dice su definición cada vez que lo usas. Si tiene entrada, el valor cambia en cada uso.</p></div></div><article class="ex" id="ex-4.1" data-id="4.1">
+  <div class="exh"><h3>Ejercicio 4.1</h3><span class="state" id="st-4.1" role="status"></span></div>
+  <div class="stage"><div class="stack "><div class="b hat mb row">definir <b>subir</b><span class="tg" aria-hidden="true"><b style="color:var(--mb)">Mis bloques</b></span></div><div class="b vr row">sumar a <span class="dd">puntos ▾</span> <span class="f">10</span><span class="tg" aria-hidden="true"><b style="color:var(--vr)">Variables</b></span></div></div><div class="stack "><div class="b hat ev row">al hacer clic en <svg class="flag" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 2v16" stroke="#2c8a2c" stroke-width="2.4" stroke-linecap="round"/><path d="M5 3c4-2 6 2 10 0v8c-4 2-6-2-10 0z" fill="#4cbf4c" stroke="#2c8a2c" stroke-width="1.2"/></svg><span class="tg" aria-hidden="true"><b style="color:var(--ev)">Eventos</b></span></div><div class="b vr row">dar a <span class="dd">puntos ▾</span> el valor <span class="f">0</span><span class="tg" aria-hidden="true"><b style="color:var(--vr)">Variables</b></span></div><div class="b mb row">subir<span class="tg" aria-hidden="true"><b style="color:var(--mb)">Mis bloques</b></span></div><div class="b mb row">subir<span class="tg" aria-hidden="true"><b style="color:var(--mb)">Mis bloques</b></span></div><div class="b lk row">decir <span class="rep">puntos</span> durante <span class="f">2</span> segundos<span class="tg" aria-hidden="true"><b style="color:var(--lk)">Apariencia</b> + <b style="color:var(--vr)">Variables</b></span></div></div></div>
+  <div class="qs"><label class="qrow"><span class="qt">¿Qué dice el sprite?</span><span class="qin"><input type="text" id="i-4.1-0" data-q="0" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Respuesta"><span class="mark" aria-hidden="true"></span></span></label><label class="qrow"><span class="qt">Si se añade un tercer «subir» antes de «decir», ¿qué diría?</span><span class="qin"><input type="text" id="i-4.1-1" data-q="1" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Respuesta"><span class="mark" aria-hidden="true"></span></span></label></div>
+  <div class="acts"><button type="button" class="btn main" data-act="check">Comprobar</button><button type="button" class="btn" data-act="hint">Pista</button><button type="button" class="btn" data-act="trace" hidden>Ver paso a paso</button></div>
+  <p class="note" id="nt-4.1" hidden></p>
+</article><article class="ex" id="ex-4.2" data-id="4.2">
+  <div class="exh"><h3>Ejercicio 4.2</h3><span class="state" id="st-4.2" role="status"></span></div>
+  <div class="stage"><div class="stack "><div class="b hat mb row">definir <b>añadir</b> <span class="par">cantidad</span><span class="tg" aria-hidden="true"><b style="color:var(--mb)">Mis bloques</b></span></div><div class="b vr row">sumar a <span class="dd">total ▾</span> <span class="par">cantidad</span><span class="tg" aria-hidden="true"><b style="color:var(--vr)">Variables</b></span></div></div><div class="stack "><div class="b hat ev row">al hacer clic en <svg class="flag" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 2v16" stroke="#2c8a2c" stroke-width="2.4" stroke-linecap="round"/><path d="M5 3c4-2 6 2 10 0v8c-4 2-6-2-10 0z" fill="#4cbf4c" stroke="#2c8a2c" stroke-width="1.2"/></svg><span class="tg" aria-hidden="true"><b style="color:var(--ev)">Eventos</b></span></div><div class="b vr row">dar a <span class="dd">total ▾</span> el valor <span class="f">0</span><span class="tg" aria-hidden="true"><b style="color:var(--vr)">Variables</b></span></div><div class="b mb row">añadir <span class="f">5</span><span class="tg" aria-hidden="true"><b style="color:var(--mb)">Mis bloques</b></span></div><div class="b mb row">añadir <span class="f">3</span><span class="tg" aria-hidden="true"><b style="color:var(--mb)">Mis bloques</b></span></div><div class="b mb row">añadir <span class="f">10</span><span class="tg" aria-hidden="true"><b style="color:var(--mb)">Mis bloques</b></span></div><div class="b lk row">decir <span class="rep">total</span> durante <span class="f">2</span> segundos<span class="tg" aria-hidden="true"><b style="color:var(--lk)">Apariencia</b> + <b style="color:var(--vr)">Variables</b></span></div></div></div>
+  <div class="qs"><label class="qrow"><span class="qt">¿Qué dice el sprite?</span><span class="qin"><input type="text" id="i-4.2-0" data-q="0" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Respuesta"><span class="mark" aria-hidden="true"></span></span></label></div>
+  <div class="acts"><button type="button" class="btn main" data-act="check">Comprobar</button><button type="button" class="btn" data-act="hint">Pista</button><button type="button" class="btn" data-act="trace" hidden>Ver paso a paso</button></div>
+  <p class="note" id="nt-4.2" hidden></p>
+</article><article class="ex" id="ex-4.3" data-id="4.3">
+  <div class="exh"><h3>Ejercicio 4.3</h3><span class="state" id="st-4.3" role="status"></span></div>
+  <div class="stage"><div class="stack "><div class="b hat mb row">definir <b>subir</b><span class="tg" aria-hidden="true"><b style="color:var(--mb)">Mis bloques</b></span></div><div class="b vr row">sumar a <span class="dd">puntos ▾</span> <span class="f">6</span><span class="tg" aria-hidden="true"><b style="color:var(--vr)">Variables</b></span></div></div><div class="stack "><div class="b hat mb row">definir <b>comprobar</b><span class="tg" aria-hidden="true"><b style="color:var(--mb)">Mis bloques</b></span></div><div class="cb ct"><div class="row">si <span class="bool"><span class="rep">puntos</span> &gt; <span class="f">10</span></span> entonces<span class="tg" aria-hidden="true"><b style="color:var(--ct)">Control</b> + <b style="color:var(--op)">Operadores</b></span></div><div class="inner"><div class="b lk row">decir <span class="f t">Ganaste</span> durante <span class="f">2</span> segundos<span class="tg" aria-hidden="true"><b style="color:var(--lk)">Apariencia</b></span></div></div><div class="mid">si no</div><div class="inner"><div class="b lk row">decir <span class="f t">Sigue</span> durante <span class="f">2</span> segundos<span class="tg" aria-hidden="true"><b style="color:var(--lk)">Apariencia</b></span></div></div><div class="cap"></div></div></div><div class="stack "><div class="b hat ev row">al hacer clic en <svg class="flag" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 2v16" stroke="#2c8a2c" stroke-width="2.4" stroke-linecap="round"/><path d="M5 3c4-2 6 2 10 0v8c-4 2-6-2-10 0z" fill="#4cbf4c" stroke="#2c8a2c" stroke-width="1.2"/></svg><span class="tg" aria-hidden="true"><b style="color:var(--ev)">Eventos</b></span></div><div class="b vr row">dar a <span class="dd">puntos ▾</span> el valor <span class="f">0</span><span class="tg" aria-hidden="true"><b style="color:var(--vr)">Variables</b></span></div><div class="b mb row">subir<span class="tg" aria-hidden="true"><b style="color:var(--mb)">Mis bloques</b></span></div><div class="b mb row">comprobar<span class="tg" aria-hidden="true"><b style="color:var(--mb)">Mis bloques</b></span></div><div class="b mb row">subir<span class="tg" aria-hidden="true"><b style="color:var(--mb)">Mis bloques</b></span></div><div class="b mb row">comprobar<span class="tg" aria-hidden="true"><b style="color:var(--mb)">Mis bloques</b></span></div></div></div>
+  <div class="qs"><label class="qrow"><span class="qt">¿Qué dice la <b>primera</b> vez que se ejecuta «comprobar»?</span><span class="qin"><input type="text" id="i-4.3-0" data-q="0" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Respuesta"><span class="mark" aria-hidden="true"></span></span></label><label class="qrow"><span class="qt">¿Qué dice la <b>segunda</b> vez?</span><span class="qin"><input type="text" id="i-4.3-1" data-q="1" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Respuesta"><span class="mark" aria-hidden="true"></span></span></label></div>
+  <div class="acts"><button type="button" class="btn main" data-act="check">Comprobar</button><button type="button" class="btn" data-act="hint">Pista</button><button type="button" class="btn" data-act="trace" hidden>Ver paso a paso</button></div>
+  <p class="note" id="nt-4.3" hidden></p>
+</article></section><section class="phase" id="fase5"><div class="phead"><span class="pn">Fase 5</span><div><h2>Todo junto</h2><p>Mezcla de variables, condicionales, repeticiones y bloques, como en el examen.</p></div></div><article class="ex" id="ex-5.1" data-id="5.1">
+  <div class="exh"><h3>Ejercicio 5.1</h3><span class="state" id="st-5.1" role="status"></span></div>
+  <div class="stage"><div class="stack "><div class="b hat mb row">definir <b>ganar</b><span class="tg" aria-hidden="true"><b style="color:var(--mb)">Mis bloques</b></span></div><div class="b vr row">sumar a <span class="dd">puntos ▾</span> <span class="f">5</span><span class="tg" aria-hidden="true"><b style="color:var(--vr)">Variables</b></span></div></div><div class="stack "><div class="b hat ev row">al hacer clic en <svg class="flag" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 2v16" stroke="#2c8a2c" stroke-width="2.4" stroke-linecap="round"/><path d="M5 3c4-2 6 2 10 0v8c-4 2-6-2-10 0z" fill="#4cbf4c" stroke="#2c8a2c" stroke-width="1.2"/></svg><span class="tg" aria-hidden="true"><b style="color:var(--ev)">Eventos</b></span></div><div class="b vr row">dar a <span class="dd">puntos ▾</span> el valor <span class="f">0</span><span class="tg" aria-hidden="true"><b style="color:var(--vr)">Variables</b></span></div><div class="b sn row">preguntar <span class="f t">¿Cuántas partidas has ganado?</span> y esperar<span class="tg" aria-hidden="true"><b style="color:var(--sn)">Sensores</b></span></div><div class="cb ct"><div class="row">repetir <span class="rep ans">respuesta</span> veces<span class="tg" aria-hidden="true"><b style="color:var(--ct)">Control</b></span></div><div class="inner"><div class="b mb row">ganar<span class="tg" aria-hidden="true"><b style="color:var(--mb)">Mis bloques</b></span></div></div><div class="cap"></div></div><div class="cb ct"><div class="row">si <span class="bool"><span class="rep">puntos</span> &gt; <span class="f">15</span></span> entonces<span class="tg" aria-hidden="true"><b style="color:var(--ct)">Control</b> + <b style="color:var(--op)">Operadores</b><br>+ <b style="color:var(--sn)">Sensores</b></span></div><div class="inner"><div class="b lk row">decir <span class="f t">Nivel superado</span> durante <span class="f">2</span> segundos<span class="tg" aria-hidden="true"><b style="color:var(--lk)">Apariencia</b></span></div></div><div class="mid">si no</div><div class="inner"><div class="b lk row">decir <span class="f t">Sigue</span> durante <span class="f">2</span> segundos<span class="tg" aria-hidden="true"><b style="color:var(--lk)">Apariencia</b></span></div></div><div class="cap"></div></div></div></div>
+  <div class="qs tbl"><label class="qrow"><span class="qt">Si escribes 2, ¿qué dice?</span><span class="qin"><input type="text" id="i-5.1-0" data-q="0" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Respuesta"><span class="mark" aria-hidden="true"></span></span></label><label class="qrow"><span class="qt">Si escribes 3, ¿qué dice?</span><span class="qin"><input type="text" id="i-5.1-1" data-q="1" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Respuesta"><span class="mark" aria-hidden="true"></span></span></label><label class="qrow"><span class="qt">Si escribes 4, ¿qué dice?</span><span class="qin"><input type="text" id="i-5.1-2" data-q="2" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Respuesta"><span class="mark" aria-hidden="true"></span></span></label></div>
+  <div class="acts"><button type="button" class="btn main" data-act="check">Comprobar</button><button type="button" class="btn" data-act="hint">Pista</button><button type="button" class="btn" data-act="trace" hidden>Ver paso a paso</button></div>
+  <p class="note" id="nt-5.1" hidden></p>
+</article><article class="ex" id="ex-5.2" data-id="5.2">
+  <div class="exh"><h3>Ejercicio 5.2</h3><span class="state" id="st-5.2" role="status"></span></div>
+  <div class="stage"><div class="stack "><div class="b hat ev row">al hacer clic en <svg class="flag" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 2v16" stroke="#2c8a2c" stroke-width="2.4" stroke-linecap="round"/><path d="M5 3c4-2 6 2 10 0v8c-4 2-6-2-10 0z" fill="#4cbf4c" stroke="#2c8a2c" stroke-width="1.2"/></svg><span class="tg" aria-hidden="true"><b style="color:var(--ev)">Eventos</b></span></div><div class="b vr row">dar a <span class="dd">a ▾</span> el valor <span class="f">2</span><span class="tg" aria-hidden="true"><b style="color:var(--vr)">Variables</b></span></div><div class="cb ct"><div class="row">repetir <span class="f">3</span> veces<span class="tg" aria-hidden="true"><b style="color:var(--ct)">Control</b></span></div><div class="inner"><div class="cb ct"><div class="row">si <span class="bool"><span class="bool in"><span class="rep">a</span> &lt; <span class="f">10</span></span></span> entonces<span class="tg" aria-hidden="true"><b style="color:var(--ct)">Control</b> + <b style="color:var(--op)">Operadores</b></span></div><div class="inner"><div class="b vr row">dar a <span class="dd">a ▾</span> el valor <span class="opr"><span class="rep">a</span> × <span class="f">2</span></span><span class="tg" aria-hidden="true"><b style="color:var(--vr)">Variables</b> + <b style="color:var(--op)">Operadores</b></span></div></div><div class="cap"></div></div></div><div class="cap"></div></div><div class="b lk row">decir <span class="rep">a</span> durante <span class="f">2</span> segundos<span class="tg" aria-hidden="true"><b style="color:var(--lk)">Apariencia</b> + <b style="color:var(--vr)">Variables</b></span></div></div></div>
+  <div class="qs"><label class="qrow"><span class="qt">¿Qué dice el sprite?</span><span class="qin"><input type="text" id="i-5.2-0" data-q="0" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Respuesta"><span class="mark" aria-hidden="true"></span></span></label><label class="qrow"><span class="qt">Si «a» empezara en 3, ¿qué diría?</span><span class="qin"><input type="text" id="i-5.2-1" data-q="1" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Respuesta"><span class="mark" aria-hidden="true"></span></span></label></div>
+  <div class="acts"><button type="button" class="btn main" data-act="check">Comprobar</button><button type="button" class="btn" data-act="hint">Pista</button><button type="button" class="btn" data-act="trace" hidden>Ver paso a paso</button></div>
+  <p class="note" id="nt-5.2" hidden></p>
+</article><article class="ex" id="ex-5.3" data-id="5.3">
+  <div class="exh"><h3>Ejercicio 5.3</h3><span class="state" id="st-5.3" role="status"></span></div>
+  <div class="stage"><div class="stack "><div class="b hat ev row">al hacer clic en <svg class="flag" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 2v16" stroke="#2c8a2c" stroke-width="2.4" stroke-linecap="round"/><path d="M5 3c4-2 6 2 10 0v8c-4 2-6-2-10 0z" fill="#4cbf4c" stroke="#2c8a2c" stroke-width="1.2"/></svg><span class="tg" aria-hidden="true"><b style="color:var(--ev)">Eventos</b></span></div><div class="b vr row">dar a <span class="dd">x ▾</span> el valor <span class="f">0</span><span class="tg" aria-hidden="true"><b style="color:var(--vr)">Variables</b></span></div><div class="b vr row">dar a <span class="dd">y ▾</span> el valor <span class="f">10</span><span class="tg" aria-hidden="true"><b style="color:var(--vr)">Variables</b></span></div><div class="cb ct"><div class="row">repetir <span class="f">3</span> veces<span class="tg" aria-hidden="true"><b style="color:var(--ct)">Control</b></span></div><div class="inner"><div class="b vr row">sumar a <span class="dd">x ▾</span> <span class="f">2</span><span class="tg" aria-hidden="true"><b style="color:var(--vr)">Variables</b></span></div><div class="b vr row">sumar a <span class="dd">y ▾</span> <span class="f">-1</span><span class="tg" aria-hidden="true"><b style="color:var(--vr)">Variables</b></span></div></div><div class="cap"></div></div><div class="cb ct"><div class="row">si <span class="bool"><span class="rep">x</span> &gt; <span class="rep">y</span></span> entonces<span class="tg" aria-hidden="true"><b style="color:var(--ct)">Control</b> + <b style="color:var(--op)">Operadores</b><br>+ <b style="color:var(--sn)">Sensores</b></span></div><div class="inner"><div class="b lk row">decir <span class="f t">Gana x</span> durante <span class="f">2</span> segundos<span class="tg" aria-hidden="true"><b style="color:var(--lk)">Apariencia</b></span></div></div><div class="mid">si no</div><div class="inner"><div class="b lk row">decir <span class="f t">Gana y</span> durante <span class="f">2</span> segundos<span class="tg" aria-hidden="true"><b style="color:var(--lk)">Apariencia</b></span></div></div><div class="cap"></div></div></div></div>
+  <div class="qs"><label class="qrow"><span class="qt">¿Cuánto vale <b>x</b> al terminar el bucle?</span><span class="qin"><input type="text" id="i-5.3-0" data-q="0" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Respuesta"><span class="mark" aria-hidden="true"></span></span></label><label class="qrow"><span class="qt">¿Cuánto vale <b>y</b>?</span><span class="qin"><input type="text" id="i-5.3-1" data-q="1" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Respuesta"><span class="mark" aria-hidden="true"></span></span></label><label class="qrow"><span class="qt">¿Qué dice el sprite?</span><span class="qin"><input type="text" id="i-5.3-2" data-q="2" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Respuesta"><span class="mark" aria-hidden="true"></span></span></label></div>
+  <div class="acts"><button type="button" class="btn main" data-act="check">Comprobar</button><button type="button" class="btn" data-act="hint">Pista</button><button type="button" class="btn" data-act="trace" hidden>Ver paso a paso</button></div>
+  <p class="note" id="nt-5.3" hidden></p>
+</article></section>
+  <section class="fin" id="final" hidden>
+    <h2>Tu resultado</h2>
+    <p id="fmsg"></p>
+    <div class="nameRow"><label for="nombre">Nombre</label><input type="text" id="nombre" autocomplete="name"><button type="button" class="btn main" id="gen">Generar resultado</button></div>
+    <textarea id="res" readonly hidden aria-label="Resultado para copiar"></textarea>
+    <div class="acts"><button type="button" class="btn" id="copy" hidden>Copiar</button><span id="copied" role="status"></span></div>
+    <p class="note" id="capnote" role="status" hidden><b>Ahora haz una captura de pantalla</b> de toda esta página (tus ejercicios en OK y el resultado), <b>incluyendo la hora del equipo</b> (el reloj de la barra de tareas o de la pantalla). Sube la captura a Classroom junto con el resultado que has copiado.</p>
+    <button type="button" class="btn reset" id="reset">Borrar mis respuestas</button>
+  </section>
+</main>
+<script>
+(function(){
+var DATA = {"1.1": {"a": [["1"]], "hint": "Empieza en 3 y resta uno cada vez que ves «sumar a vidas −1».", "trace": "vidas: 3 → 2 → 1. Dice 1.", "guide": "vidas empieza en 3. Tras el primer «sumar a vidas −1» vale 2. Aplica ahora el segundo «sumar» al valor que tienes. Lo que dice el sprite es el valor que te salga.", "phase": 1}, "1.2": {"a": [["4"], ["5"]], "hint": "«b» copia el valor que tiene «a» en ese momento. Si «a» cambia después, «b» no se entera.", "trace": "a = 4. b copia 4. Luego a pasa a 5, pero b se queda en 4. Dice 4 y a vale 5.", "guide": "a vale 4. En la tercera línea, b copia el valor que tiene a en ese momento y se queda con él. En la cuarta línea solo cambia a. Calcula el nuevo valor de a y piensa si b se ve afectada.", "phase": 1}, "1.3": {"a": [["2"]], "hint": "Hay un «dar a … el valor» en medio. ¿Qué hace con lo que había antes?", "trace": "monedas: 0 → 2 → 5 → (dar a 1) 1 → 2. Dice 2.", "guide": "monedas: 0 → 2 → 5. Ahora viene un «dar a monedas el valor 1». Sigue tú desde ahí, línea por línea.", "phase": 1}, "2.1": {"a": [["Aprobado"], ["Suspendido"], ["Suspendido"]], "hint": "La condición es «mayor que 6». ¿6 es mayor que 6?", "trace": "8 > 6 sí → Aprobado. 6 > 6 no → Suspendido. 3 > 6 no → Suspendido.", "guide": "Para cada número comprueba si es mayor que 6. Si la respuesta es sí, se ejecuta lo de «entonces»; si es no, lo de «si no». Haz la comparación con los tres números.", "phase": 2}, "2.2": {"a": [["Entrada normal"], ["Entrada joven"], ["Entrada joven"], ["Entrada normal"]], "hint": "Con «y» tienen que cumplirse las dos comparaciones a la vez.", "trace": "11 > 11 no → normal. 12: mayor que 11 y menor que 18 → joven. 17 → joven. 18 < 18 no → normal.", "guide": "Para cada edad comprueba por separado «mayor que 11» y «menor que 18». Con «y» solo se ejecuta la rama de arriba si las dos respuestas son sí.", "phase": 2}, "2.3": {"a": [["17"], ["5"], ["19"]], "hint": "Este «si» no tiene «si no»: si la condición falla, simplemente no se hace nada dentro.", "trace": "7 > 5 → suma 10 → 17. 5 > 5 no → se queda en 5. 9 > 5 → 19.", "guide": "Primero puntos toma el valor que escribes. Después se comprueba si es mayor que 5: solo en ese caso se ejecuta el bloque de dentro. Al final, el sprite dice el valor de puntos.", "phase": 2}, "3.1": {"a": [["12"], ["15"]], "hint": "Lo de dentro se hace una vez por cada vuelta del bucle.", "trace": "total: 0 → 3 → 6 → 9 → 12 (4 vueltas). Con 5 vueltas: 15.", "guide": "total empieza en 0. En la 1.ª vuelta pasa a 3 y en la 2.ª a 6. Cuenta cuántas vueltas faltan y sigue sumando. Para la otra pregunta, cuenta una vuelta más.", "phase": 3}, "3.2": {"a": [["3"], ["1"]], "hint": "¿Qué bloques están dentro del «repetir» y cuáles quedan fuera, debajo?", "trace": "«Hola» está dentro: 3 veces. «Adiós» está fuera: una sola vez, al final.", "guide": "Mira qué bloques están dentro del «repetir» (los que llevan sangría) y cuáles están debajo de él. Los de dentro se hacen una vez por vuelta; los de fuera, una sola vez.", "phase": 3}, "3.3": {"a": [["6"], ["0"], ["10"]], "hint": "El número de vueltas lo marca lo que escribes. Cada vuelta suma 2.", "trace": "3 vueltas × 2 = 6. 0 vueltas = 0. 5 vueltas × 2 = 10.", "guide": "El número que escribes son las vueltas. Cada vuelta suma 2 a piezas, que empieza en 0. Para cada número, calcula cuántas vueltas hay y cuánto suman en total.", "phase": 3}, "4.1": {"a": [["20"], ["30"]], "hint": "Cada vez que aparece «subir», se ejecuta lo que hay en su definición.", "trace": "puntos: 0 → 10 → 20. Con un tercer «subir»: 30.", "guide": "Cada «subir» ejecuta su definición: suma 10 a puntos. puntos empieza en 0 y tras el primer «subir» vale 10. Aplica el segundo. Para la otra pregunta, aplica uno más.", "phase": 4}, "4.2": {"a": [["18"]], "hint": "El número que ves en «añadir» es el valor que toma «cantidad» en esa llamada.", "trace": "total: 0 → +5 = 5 → +3 = 8 → +10 = 18.", "guide": "total empieza en 0. «añadir 5» suma 5, así que total vale 5. Después «añadir 3» suma 3. Continúa con la última llamada.", "phase": 4}, "4.3": {"a": [["Sigue"], ["Ganaste"]], "hint": "Antes de cada «comprobar», mira cuánto valen los puntos en ese momento.", "trace": "Primera: puntos = 6, 6 > 10 no → Sigue. Segunda: puntos = 12, 12 > 10 sí → Ganaste.", "guide": "Primer «subir»: puntos pasa de 0 a 6. En el primer «comprobar», haz la comparación «6 > 10» y mira qué rama toca. Luego otro «subir» suma 6 más; calcula los puntos y repite la comprobación.", "phase": 4}, "5.1": {"a": [["Sigue"], ["Sigue"], ["Nivel superado"]], "hint": "Cada partida ganada son 5 puntos. Calcula los puntos y compáralos con 15.", "trace": "2 → 10 puntos, no > 15 → Sigue. 3 → 15, 15 > 15 no → Sigue. 4 → 20 > 15 → Nivel superado.", "guide": "Cada vuelta llama a «ganar», que suma 5 puntos. Para cada número, calcula los puntos totales (empiezan en 0) y compáralos con 15 usando «mayor que».", "phase": 5}, "5.2": {"a": [["16"], ["12"]], "hint": "En cada vuelta, el «si» decide si se duplica o no. Comprueba «a < 10» con el valor de ese momento.", "trace": "a = 2: ¿2<10? sí → 4. ¿4<10? sí → 8. ¿8<10? sí → 16. Dice 16. Con a = 3: 6, 12, y 12 < 10 no → se queda en 12.", "guide": "a empieza en 2. En cada vuelta se comprueba «a < 10» antes de duplicar. Vuelta 1: ¿2 < 10? Sí, así que a pasa a 4. Haz la vuelta 2 y la 3 comprobando de nuevo. Para la otra pregunta, empieza con a = 3 y haz lo mismo.", "phase": 5}, "5.3": {"a": [["6"], ["7"], ["Gana y"]], "hint": "Dentro del bucle cambian las dos variables a la vez.", "trace": "x: 0 → 2 → 4 → 6. y: 10 → 9 → 8 → 7. ¿6 > 7? no → Gana y.", "guide": "x empieza en 0 e y en 10. En cada vuelta x sube 2 e y baja 1. Anota los valores tras cada una de las 3 vueltas. Después compara si x es mayor que y.", "phase": 5}};
+var N = 15;
+var KEY = 'repaso-lectura-scratch-v2';
+var state = {done:{}, tries:{}, ans:{}, name:''};
+try { var s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (s) state = s; } catch(e) {}
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e) {} }
+function norm(t){
+  return String(t).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .replace(/[«»"'“”¡!¿?]/g,'').replace(/,/g,'.').replace(/\s+/g,' ').replace(/\.$/,'').trim();
+}
+function qs(id,sel){ return document.getElementById(id) }
+function inputsOf(card){ return Array.prototype.slice.call(card.querySelectorAll('input[type=text]')); }
+function setState(id, ok, txt){
+  var el = document.getElementById('st-'+id);
+  el.textContent = txt || '';
+  el.className = 'state' + (ok === true ? ' ok' : ok === false ? ' no' : '');
+}
+function paint(card, results){
+  inputsOf(card).forEach(function(inp,i){
+    var m = inp.parentNode.querySelector('.mark');
+    inp.classList.remove('ok','no'); m.className='mark'; m.textContent='';
+    if (results && results[i] !== null){
+      inp.classList.add(results[i] ? 'ok':'no');
+      m.classList.add(results[i] ? 'ok':'no');
+      m.textContent = results[i] ? '✓' : '✗';
+    }
+  });
+}
+function check(card){
+  var id = card.getAttribute('data-id'), d = DATA[id];
+  var inputs = inputsOf(card), res = [], allOk = true, empty = 0;
+  inputs.forEach(function(inp,i){
+    var v = norm(inp.value); state.ans[id+'-'+i] = inp.value;
+    if (!v){ res.push(null); empty++; allOk = false; return; }
+    var ok = d.a[i].some(function(a){ return norm(a) === v });
+    res.push(ok); if (!ok) allOk = false;
+  });
+  paint(card, res);
+  if (empty === inputs.length){ setState(id, null, 'Escribe tu respuesta'); return; }
+  state.tries[id] = (state.tries[id]||0) + 1;
+  var nowIso = new Date().toISOString(); if (!state.start) state.start = nowIso; state.end = nowIso;
+  var note = document.getElementById('nt-'+id);
+  if (allOk){
+    state.done[id] = true; card.classList.add('ok'); setState(id, true, '¡OK!');
+    card.querySelector('[data-act=trace]').hidden = false;
+  } else {
+    delete state.done[id]; card.classList.remove('ok');
+    var good = res.filter(function(r){return r===true}).length;
+    setState(id, false, empty ? 'Faltan respuestas' : (good + ' de ' + inputs.length + ' bien'));
+    if ((state.tries[id]||0) >= 2) card.querySelector('[data-act=trace]').hidden = false;
+  }
+  save(); progress();
+}
+function two(n){ return (n<10?'0':'')+n; }
+function fmt(iso){ var d = new Date(iso); return two(d.getDate())+'/'+two(d.getMonth()+1)+'/'+d.getFullYear()+' '+two(d.getHours())+':'+two(d.getMinutes()); }
+function dur(a,b){ var m = Math.round((new Date(b)-new Date(a))/60000); return m < 60 ? m+' min' : Math.floor(m/60)+' h '+two(m%60)+' min'; }
+function progress(){
+  var n = Object.keys(state.done).length;
+  document.getElementById('pbar').style.width = (100*n/N) + '%';
+  document.getElementById('ptxt').textContent = n + ' de ' + N + ' ejercicios en OK';
+  var per = [];
+  for (var p=1;p<=5;p++){
+    var tot=0, ok=0;
+    for (var k in DATA){ if (DATA[k].phase===p){ tot++; if (state.done[k]) ok++; } }
+    per.push('Fase '+p+': '+ok+'/'+tot);
+  }
+  document.getElementById('pphase').textContent = per.join(' · ');
+  document.getElementById('final').hidden = false;
+  document.getElementById('fmsg').textContent = n === N ? '¡Todos en OK! Genera tu resultado y pégalo en Classroom.' : 'Puedes generar tu resultado cuando quieras, aunque no hayas terminado.';
+}
+document.addEventListener('click', function(ev){
+  var b = ev.target.closest('[data-act]'); if (!b) return;
+  var card = b.closest('.ex'), id = card.getAttribute('data-id'), note = document.getElementById('nt-'+id);
+  var act = b.getAttribute('data-act');
+  if (act === 'check') check(card);
+  if (act === 'hint'){ note.hidden = false; note.textContent = 'Pista: ' + DATA[id].hint; }
+  if (act === 'trace'){ note.hidden = false; note.textContent = state.done[id] ? 'Cómo se resuelve: ' + DATA[id].trace : 'Paso a paso (sin la solución, termínalo tú): ' + DATA[id].guide; }
+});
+document.addEventListener('keydown', function(ev){
+  if (ev.key === 'Enter' && ev.target.matches('.ex input')) { ev.preventDefault(); check(ev.target.closest('.ex')); }
+});
+// restore
+Object.keys(DATA).forEach(function(id){
+  var card = document.getElementById('ex-'+id);
+  inputsOf(card).forEach(function(inp,i){ var v = state.ans[id+'-'+i]; if (v) inp.value = v; });
+  if (state.done[id]){
+    var res = inputsOf(card).map(function(){return true});
+    paint(card,res); card.classList.add('ok'); setState(id,true,'¡OK!');
+    card.querySelector('[data-act=trace]').hidden = false;
+  }
+});
+var nm = document.getElementById('nombre'); nm.value = state.name || '';
+nm.addEventListener('input', function(){ state.name = nm.value; save(); });
+document.getElementById('gen').addEventListener('click', function(){
+  var n = Object.keys(state.done).length;
+  var tiempo = state.start ? '\nInicio: ' + fmt(state.start) + '\nFin: ' + fmt(state.end) + '\nTiempo entre el primer y el último ejercicio comprobado: ' + dur(state.start, state.end) : '\nInicio y fin: sin ejercicios comprobados todavía';
+  var txt = 'Repaso de lectura de código (Scratch)\nAlumno/a: ' + (nm.value || '(sin nombre)') + '\nEjercicios en OK: ' + n + ' de ' + N + '\n' + document.getElementById('pphase').textContent + tiempo;
+  var ta = document.getElementById('res'); ta.hidden = false; ta.value = txt; ta.style.height = 'auto'; ta.style.height = (ta.scrollHeight + 6) + 'px'; ta.focus(); ta.select();
+  var msg = document.getElementById('copied'); msg.textContent = 'Selecciona y copia este texto, o pulsa el botón de copiar.';
+  document.getElementById('copy').hidden = false;
+});
+document.getElementById('copy').addEventListener('click', function(){
+  var ta = document.getElementById('res'), msg = document.getElementById('copied');
+  document.getElementById('capnote').hidden = false;
+  var done = function(){ msg.textContent = 'Copiado. Pégalo en Classroom.'; };
+  var fb = function(){ ta.focus(); ta.select(); msg.textContent = 'Selecciona el texto y cópialo con Ctrl+C.'; };
+  try { navigator.clipboard.writeText(ta.value).then(done, fb); } catch(e){ fb(); }
+});
+document.getElementById('reset').addEventListener('click', function(){
+  var b = document.getElementById('reset');
+  if (b.getAttribute('data-sure') !== '1'){ b.setAttribute('data-sure','1'); b.textContent = 'Pulsa otra vez para borrar todo'; return; }
+  state = {done:{}, tries:{}, ans:{}, name:'', start:null, end:null}; save(); location.reload();
+});
+progress();
+})();
+</script>
+
+</body></html>
